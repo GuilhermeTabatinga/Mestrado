@@ -1,0 +1,628 @@
+
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+from tkinter import *
+from tkinter import ttk
+from tkinter import tix
+import tkinter as tk
+from tkinter import filedialog
+import codecs
+import numpy as np
+import matplotlib.pyplot as plt
+plt.style.use('classic')
+import matplotlib
+from tkinter import messagebox
+import numpy as np
+from scipy.fftpack import fft
+from scipy import signal
+import statistics as st
+from statsmodels.tsa.stattools import acf
+from scipy import integrate as intg
+import numpy as geek
+import numpy as np
+from operator import truediv
+import matplotlib.colors
+
+
+
+class ler_dados_txt():
+    
+    def open_files(self):
+        
+        self.files = filedialog.askopenfilename(multiple=True) 
+       
+        return (self.files)
+     
+    def path_to_files(self):
+    
+        self.files = self.open_files()
+        self.fold = self.files[0].split(r'/')[0:-1]
+        self.folder = '/'.join(self.fold) 
+        
+        return(self.folder)
+     
+    def read_ponits_teste(self):
+        
+        self.files = self.open_files()
+        
+        self.fe = open(self.files[0], 'r')
+        
+        self.pontos_medidos = []
+       
+        for line in self.fe.readlines():
+            
+             self.pontos_medidos.append(line)
+    
+        self.dx, self.x0, self.xf, self.dz, self.z0, self.zf, self.y = self.pontos_medidos[1].split()
+        
+        return (self.dx, self.x0, self.xf, self.dz, self.z0, self.zf, self.y) 
+    
+    def read_calibration(self):
+        
+        self.files = self.open_files()
+        
+        self.fe = open(self.files[0], 'r')
+        
+        self.coef_Poli = []
+        self.coef_King = []
+       
+        for line in self.fe.readlines():
+            
+             self.coef_Poli.append(line)
+             self.coef_King.append(line)
+             
+        self.p1, self.p2, self.p3, self.p4, self.p5 = self.coef_Poli[6].split()    
+        self.a, self.b = self.coef_King[2].split()  
+        
+        return (self.p1, self.p2, self.p3, self.p4, self.p5, self.a, self.b)
+    
+    def read_dados_mens(self):
+
+        print("Abra o arquivo de pontos de test-report")
+        self.pontos_medidos = self.read_ponits_teste()
+        
+        print("Abra o arquivo de calibração")
+        
+        
+        self.dados_calib = self.read_calibration()
+        
+        self.dx, self.x0, self.xf, self.dz, self.z0, self.zf, self.y = self.pontos_medidos[0], self.pontos_medidos[1], self.pontos_medidos[2], self.pontos_medidos[3], self.pontos_medidos[4], self.pontos_medidos[5], self.pontos_medidos[6]
+        
+        self.p1, self.p2, self.p3, self.p4, self.p5 = float (self.dados_calib[0]), float(self.dados_calib[1]), float(self.dados_calib[2]), float(self.dados_calib[3]), float(self.dados_calib[4])                    
+       
+        self.a, self.b = self.dados_calib[5], self.dados_calib[6]   
+        
+        self.x_plan = range(int(self.x0), int(self.xf)+int(self.dx), int(self.dx))
+        self.y_plan = range(int(self.z0), int(self.zf)+int(self.dz), int(self.dz))
+        
+        self.Lx, self.Ly = int(len(self.x_plan)), int(len(self.y_plan))
+        print("Abra o arquivo de pontos de medidas")  
+        self.path = self.path_to_files()
+
+        
+    
+    
+        self.um = []*self.Lx
+
+        self.udesv = []*self.Lx
+    
+        self.U = np.zeros((self.Ly, self.Lx))
+
+        self.U_dev = np.zeros((self.Ly, self.Lx))
+
+        self.energ_cin = np.zeros((self.Ly, self.Lx))
+
+        self.pontos = []
+        
+        try:
+    
+            j = int(self.z0)
+        
+            for k in range(0,self.Ly,1):
+                
+                h = int(self.x0)
+                        
+        
+                for i in range(0,self.Lx,1):
+        
+                    
+                    filename  = self.y + "x" + str(h) + "x" + str(j) + '.txt'
+
+                    self.pontos.append(filename[0:-4])
+
+                    path1 = str(self.path) + '/' + str(filename)
+                                  
+                    fe = codecs.open(path1)
+                    e = np.loadtxt(fe)
+                                        
+                    u = self.p1*e**4 + self.p2*e**3 + self.p3*e**2 + self.p4*e + self.p5
+                        
+                    u_mean = np.mean(u)
+
+                    self.u_prime = u - u_mean
+                    
+                    u_desv = st.stdev(u)
+        
+                    
+                    self.um.append(u_mean)
+
+                    self.udesv.append(u_desv)
+
+                    self.U [k,i] = u_mean 
+                    np.savetxt('velocidade.txt',self.U, newline='\n')    
+
+                    self.U_dev [k,i] = u_desv
+
+                    self.energ_cin [k,i] = np.mean(0.5*self.u_prime**2)
+
+
+                    h = h + int(self.dx)
+                j = j + int(self.dz)
+
+                
+            self.comb_pontos ['values'] = self.pontos
+            self.comb_pontos.current()
+
+            self.perfil = []
+            self.perfil = np.arange(int(self.x0), int(self.xf), int(self.dx))
+            print(self.perfil)
+
+            self.comb_perfil ['values'] = self.perfil
+            self.comb_perfil.current()
+                
+        except Exception as e:
+            print(e)
+        
+        return (self.um, self.U, self.Lx,self.Ly, self.dx, self.x0, self.xf, self.dz, self.z0, self.zf, self.y)
+
+    def inten_turbulence(self):
+
+        self.Iturb = self.U_dev/np.mean(self.U)
+
+
+    def cria_figuras(self, y = 0):
+        """
+        Gráfico frame 1 
+        """
+
+        self.fig = Figure(figsize=(4, 3.5), dpi= 80) 
+        self.fig.suptitle("Grid de coleta no plano Y = {} mm".format(str(y)))
+        self.ax = self.fig.add_subplot(111) 
+        self.ax.set_ylabel("z/D")
+        self.ax.set_xlabel("x/D")
+    
+        self.graph = FigureCanvasTkAgg(self.fig, master= self.frame3) 
+        self.graph.get_tk_widget().place(relx = 0, rely = 0, relwidth = 1, relheight = 1)
+
+        """
+        Gráfico frame 2 
+        """
+
+        self.fig1 = Figure(figsize=(4, 3.5), dpi= 80) 
+        self.fig1.suptitle('Contorno de velocidade do plano Y = {} mm'.format(str(y)))
+        self.ax1 = self.fig1.add_subplot(111) 
+        self.ax1.set_xlabel('x/D')
+        self.ax1.set_ylabel('z/D')
+    
+        self.graph1 = FigureCanvasTkAgg(self.fig1, master= self.frame4) 
+        self.graph1.get_tk_widget().place(relx = 0, rely = 0, relwidth = 1, relheight = 1)
+
+        """
+        Gráfico frame 3
+        """
+
+        self.fig = Figure(figsize=(5, 3.5), dpi= 80) 
+        self.fig.suptitle('Intensidade de turbulência do plano Y = {} mm'.format(str(y)))
+        self.ax2 = self.fig.add_subplot(111) 
+        self.ax2.set_xlabel('x/D')
+        self.ax2.set_ylabel('z/D')
+    
+        self.graph2 = FigureCanvasTkAgg(self.fig, master= self.frame5) 
+        self.graph2.get_tk_widget().place(relx = 0, rely = 0, relwidth = 1, relheight = 1)
+
+        """
+        Gráfico frame 4
+        """
+        self.fig_espH = Figure(figsize=(5, 4), dpi= 80) 
+        self.fig_espH.suptitle('Energia cinética de turbulência do plano Y = {} mm'.format(str(y)))
+        self.ax3 = self.fig_espH.add_subplot(111) #
+        self.ax3.set_ylabel("z/D") 
+        self.ax3.set_xlabel("x/D") 
+
+        self.graph3 = FigureCanvasTkAgg(self.fig_espH, master= self.frame6) 
+        self.graph3.get_tk_widget().place(relx = 0, rely = 0, relwidth = 1, relheight = 1)
+
+    def plot_data(self):
+
+       # [self.um, self.U, self.Lx,self.Ly, self.dx, self.x0, self.xf, self.dz, self.z0, self.zf, self.y] = self.read_dados_mens()  
+
+        self.L_carac = self.entry_diam.get()
+        # L = len(self.um)
+        
+        tx = (float(self.xf) - float(self.x0))/float(self.L_carac)
+        ty = (float(self.zf) - float(self.z0))/float(self.L_carac)
+        self.cria_figuras(self.y)
+        xlist = np.linspace(0,tx,self.Lx)
+        ylist = np.linspace(0,ty,self.Ly)
+        self.t = np.linspace(0,ty,len(ylist))
+     
+
+        x1 = np.linspace(0,tx,self.Lx)
+        x2 = np.linspace(0,ty,self.Ly)
+
+        
+        X, Y = np.meshgrid(xlist, ylist)
+
+        """ Gráfico com grid de pontos """
+        self.ax.scatter(X, Y, color="green")
+        self.ax.figure.savefig("grid.png", dpi = 300)
+
+
+        self.U0 = float(self.entry_vel.get())
+ 
+
+        self.Uadm = np.true_divide(self.U, self.U0)
+        cp = self.ax1.contourf(x1,x2,self.Uadm)
+        self.fig1.colorbar(cp) # Add a colorbar to a plot
+        self.fig1.figure.savefig("velocidade-torre-media-liso.png")
+        
+        
+
+
+
+        self.inten_turbulence()
+
+        cpi = self.ax2.contourf(x1,x2, self.Iturb)
+        self.fig.colorbar(cpi) # Add a colorbar to a plot
+        self.fig.figure.savefig("Intensidade-torre-media-RUGOSO.eps")
+     
+
+        cp_ec = self.ax3.contourf(x1,x2, self.energ_cin)
+        self.fig_espH.colorbar(cp_ec) # Add a colorbar to a plot
+        self.fig_espH.figure.savefig("energia-torre-media-RUGOSO.eps")
+        
+        zd = [(400)/225]*len(X)  # Vetor linha de centro
+        zd1 = [(400+112)/225]*len(X)
+        zd2 = [(400-112)/225]*len(X)
+    
+        from matplotlib import pyplot as plt
+
+        fig, ax = plt.subplots()
+
+        # circle = plt.Circle((1,1),1, fill = False)
+
+        # ax.add_artist(circle)
+
+        ax.scatter(X, Y, color="green")
+        ax.plot(X, zd, "-ob")
+        
+        plt.plot(X, zd1, "-*k")
+        plt.plot(X, zd2, "-*k")
+        ax.set_ylabel(r'$\dfrac{{Z}}{{D}}$', fontsize = 14)
+        ax.set_xlabel(r"$\dfrac{{X}}{{D}}$", fontsize = 14)
+        ax.set_ylim(-0.05, 3)
+        ax.set_xlim(-0.05, 3.5)
+        plt.rcParams['xtick.labelsize'] = 14
+        plt.rcParams['ytick.labelsize'] = 14
+        plt.show()
+
+        c1 = np.linspace(0,2,100)  # Diametro do rotor 
+        c2 = np.linspace(0,2,100)  # Diametro do rotor
+
+        C1, C2 = np.meshgrid(c1, c2)
+
+        F = (C1-1)**2 + (C2-1)**2 - 1
+
+       # plt.contour(C1, C2, F, [0])
+        plt.contourf(x1,x2,self.Uadm, levels = np.linspace(-0.4,1.2,50)) #Contorno de Velocidade (lim inferior, lim superior, qtd de niveis -1 cores)
+        plt.plot(X, zd, "-ob")
+        np.savetxt('velocidade-montante-liso-copia.txt',self.Uadm, newline='\n')
+           
+
+
+        plt.plot(X, zd1, "-*k")
+        plt.plot(X, zd2, "-*k")
+        clb=plt.colorbar()
+        clb.ax.tick_params(labelsize = 16) 
+        clb.ax.set_ylabel(r"$\dfrac{{U}}{{U_{0}}}$",fontsize=20)
+        plt.ylim(0, 2.5) #limite dos pontos admensionais Z 
+        plt.xlim(0, 3) #limete dos pontos admensionais X
+        plt.ylabel("$\dfrac{{Z}}{{D}}$", fontsize = 14)
+        plt.xlabel("$\dfrac{{X}}{{D}}$", fontsize = 14)
+        plt.rcParams['xtick.labelsize'] = 14
+        plt.rcParams['ytick.labelsize'] = 14
+        plt.show()
+        # plt.savefig('velocidade.eps', dpi=380)
+        
+
+        c1 = np.linspace(0,(2),100)
+        c2 = np.linspace(0,(2),100)
+
+        C1, C2 = np.meshgrid(c1, c2)
+
+        F = (C1-(1))**2 + (C2-(1))**2 - 1
+
+       # plt.contour(C1, C2, F, [0])
+        plt.contourf(x1,x2, self.Iturb, levels = np.linspace(0,2.8,100)) #, levels = np.linspace(0.0,0.22,12) # intensidade de Turb
+        np.savetxt('IT-montante-liso-copia.txt',self.Iturb, newline='\n')
+
+        plt.plot(X, zd, "-ob")
+        plt.plot(X, zd1, "-*k")
+        plt.plot(X, zd2, "-*k")
+        clb=plt.colorbar()
+        clb.ax.tick_params(labelsize = 14) 
+        clb.ax.set_ylabel(r"$\frac{\sigma_{u'}}{\bar{U}}$",fontsize=40)
+        plt.ylabel("$\dfrac{{Z}}{{D}}$", fontsize = 14)
+        plt.xlabel("$\dfrac{{X}}{{D}}$", fontsize = 14)
+        plt.ylim(0, (2.5))
+        plt.xlim(0, (3))
+        plt.rcParams['xtick.labelsize'] = 14
+        plt.rcParams['ytick.labelsize'] = 14
+        plt.show()
+        # plt.savefig('intensidade.jpeg', dpi=380)
+
+
+        c1 = np.linspace(0,(2),100)
+        c2 = np.linspace(0,(2),100)
+
+        C1, C2 = np.meshgrid(c1, c2)
+
+        F = (C1-1)**2 + (C2-1)**2 - 1
+
+        #plt.contour(C1, C2, F, [0])
+        plt.contourf(x1,x2, self.energ_cin, levels = np.linspace(0.0,160,400))  #Energia cinética
+        np.savetxt('EC-montante-liso-copia.txt',self.energ_cin, newline='\n')
+        plt.plot(X, zd, "-ob")
+        plt.plot(X, zd1, "-*k")
+        plt.plot(X, zd2, "-*k")
+        clb=plt.colorbar()
+        clb.ax.tick_params(labelsize = 14) 
+        clb.ax.set_ylabel(r"$\frac{u'^{2}}{2}$",fontsize=40)
+        plt.ylabel("$\dfrac{{Z}}{{D}}$", fontsize = 14)
+        plt.xlabel("$\dfrac{{X}}{{D}}$", fontsize = 14)
+        plt.ylim(0, (2.5))
+        plt.xlim(0, (3))
+        plt.rcParams['xtick.labelsize'] = 13
+        plt.rcParams['ytick.labelsize'] = 13
+        plt.show()
+        
+    def graficos_PSD_perfil(self, y = 0, x = 0):
+
+        """
+        Gráfico frame 1 
+        """
+
+        self.fig = Figure(figsize=(5, 6), dpi= 80) 
+        self.fig.suptitle("Perfil de velocidade para X = {} mm".format(str(x)))
+        self.ax = self.fig.add_subplot(111) 
+        self.ax.set_ylabel("Z/D")
+        self.ax.set_xlabel("U/U0")
+        self.ax.grid() 
+    
+        self.graph = FigureCanvasTkAgg(self.fig, master= self.frame3) 
+        self.graph.get_tk_widget().place(relx = 0, rely = 0, relwidth = 1, relheight = 1)
+        
+        """
+        Gráfico frame 2 
+        """
+
+        self.fig1 = Figure(figsize=(5, 6), dpi= 80) 
+        self.fig1.suptitle("Perfil de Intensidade de Turbulência para X = {} mm".format(str(x)))
+        self.ax1 = self.fig1.add_subplot(111) 
+        self.ax1.set_xlabel('Intensidade (%)')
+        self.ax1.set_ylabel('Z/D')
+        self.ax1.grid()
+    
+        self.graph1 = FigureCanvasTkAgg(self.fig1, master= self.frame4) 
+        self.graph1.get_tk_widget().place(relx = 0, rely = 0, relwidth = 1, relheight = 1)
+        
+
+        """
+        Gráfico frame 3
+        """
+
+        self.fig = Figure(figsize=(5, 6), dpi= 80) 
+        self.fig.suptitle('Perfil de energia cinética de turbulência X = {} mm'.format(str(x)))
+        self.ax2 = self.fig.add_subplot(111) 
+        self.ax2.set_xlabel('Energia cinética [J]')
+        self.ax2.set_ylabel('Z/D')
+        self.ax2.grid()
+    
+        self.graph2 = FigureCanvasTkAgg(self.fig, master= self.frame5) 
+        self.graph2.get_tk_widget().place(relx = 0, rely = 0, relwidth = 1, relheight = 1)
+        
+        
+        """
+        Gráfico frame 4
+        """
+        self.fig_espH = Figure(figsize=(5, 6), dpi= 80) 
+        self.fig_espH.suptitle("PSD do ponto {} ".format(str(y)))
+        self.ax3 = self.fig_espH.add_subplot(111) #
+        self.ax3.set_ylabel("PSD") 
+        self.ax3.set_xlabel("Frequência (Hz)") 
+        self.ax3.grid() 
+
+        self.graph3 = FigureCanvasTkAgg(self.fig_espH, master= self.frame6) 
+        self.graph3.get_tk_widget().place(relx = 0, rely = 0, relwidth = 1, relheight = 1)
+        
+
+    def perfil_vel(self):
+
+        self.um = []*self.Lx
+
+        self.udesv = []*self.Lx
+
+        self.energ_c = []*self.Lx
+
+        try:
+
+            j = self.comb_perfil.get()    
+
+            h = int(self.z0)
+                    
+    
+            for i in range(0,self.Ly,1):
+    
+                
+                filename  = self.y + "x" + str(j) + "x" + str(h) + '.txt'
+
+                path1 = str(self.path) + '/' + str(filename)
+                                
+                fe = codecs.open(path1)
+                e = np.loadtxt(fe)
+                                    
+                u = self.p1*e**4 + self.p2*e**3 + self.p3*e**2 + self.p4*e + self.p5
+                    
+                u_mean = np.mean(u)
+
+                u_desv = st.stdev(u)*100
+
+                u_prime = u - u_mean
+
+                ener_c = np.mean(0.5*u_prime**2)
+    
+                self.energ_c.append(ener_c)
+
+                self.um.append(u_mean)
+
+                self.udesv.append(u_desv) 
+    
+                h = h + int(self.dz)
+            
+            self.Intperfil = list(map(truediv, self.udesv, self.um))
+
+            
+
+             
+        except Exception as e:
+            print(e)
+
+    def PSD_ponto(self):
+
+        filename = self.comb_pontos.get()
+   
+
+        path_ponto = str(self.path) + '/' + str(filename) + ".txt"
+                                  
+        fe = codecs.open(path_ponto)
+        e = np.loadtxt(fe)
+                            
+        u = self.p1*e**4 + self.p2*e**3 + self.p3*e**2 + self.p4*e + self.p5
+
+        [freqs,psd] = signal.welch(u, 10000, nperseg = 2048)
+
+        self.graficos_PSD_perfil(filename, self.comb_perfil.get())
+        self.perfil_vel()
+        PSD = [freqs,psd]
+        np.savetxt('PSD.txt', PSD, newline='\n')
+        #self.u_perfil = np.append(map(truediv, self.um, self.U0))
+        self.u_perfil = np.asarray(self.um)/np.asarray(self.U0)
+        self.ax3.loglog(freqs, psd)
+
+        # self.ax.plot(self.u_perfil, self.t)
+        # self.ax1.plot(self.Intperfil, self.t)
+        # self.ax2.plot(self.energ_c, self.t)
+
+        from matplotlib import pyplot as plt
+
+        fig, ax = plt.subplots()
+
+        ax.loglog(freqs, psd)
+        
+        # plt.plot(X, zd1, "-*k")
+        # plt.plot(X, zd2, "-*k")
+        ax.set_ylabel(r'$\dfrac{{Z}}{{R}}$', fontsize = 14)
+        ax.set_xlabel(r"$\dfrac{{Y}}{{R}}$", fontsize = 14)
+        # ax.set_ylim(-0.05, 2.4)
+        # ax.set_xlim(-0.05, 2.4)
+        plt.rcParams['xtick.labelsize'] = 14
+        plt.rcParams['ytick.labelsize'] = 14
+        plt.show()
+
+
+root =tix.Tk() 
+
+       
+class Application(ler_dados_txt):
+    def __init__(self, **kwargs):
+       
+        self.root = root 
+        #self.root.iconbitmap('C:\\Users\\bacab\\Google Drive\\Hotwire-master\\ico_tela.ico')
+        self.tela()
+        self.frames1_tela()
+        self.frames2_tela()
+        self.cria_figuras()
+        self.root.mainloop()
+        
+    def tela(self):
+        self.root.title("AVANT LEA-UnB 2021")
+        self.root.configure(background= '#1e3743')
+        self.root.geometry("1500x850")
+        self.root.resizable(True, True)
+        self.root.maxsize(height = 850, width = 1350)
+        self.root.minsize(height = 300, width = 400)
+        
+    def frames1_tela(self):
+        
+        self.frame1 = Frame(self.root, bg = "white", highlightthickness =2, relief = "ridge")
+        self.frame1.place(x = 10, y = 10, width = 1350, height = 65)
+        nome = "Analisador de sinal de Anemômetro de Fio Quente / LEA-UnB"
+        self.label_nome = Label(self.frame1, text = nome, bg = "white", fg = "black", font = ("Arial", 20, "bold"))
+        self.label_nome.pack()
+        
+        des = "Desenvolvido por: Reginaldo Nunes"
+        self.label_des = Label(self.frame1, text = des, bg = "white", fg = "black", font = ("Arial", 14, "bold"))
+        self.label_des.pack(side = "right")
+        
+    def frames2_tela(self):
+            
+        self.frame2 = Frame(self.root, bg = "white", bd = 4,  highlightthickness =2, relief = "ridge")
+        self.frame2.place(x = 10, y = 80, width = 1350, height = 80)
+
+        self.frame3 = Frame(self.root, bg = "white", bd = 4,  highlightthickness =2, relief = "ridge")
+        self.frame3.place(x = 10, y = 160, width = 665, height = 290)
+
+        self.frame4 = Frame(self.root, bg = "white", bd = 4,  highlightthickness =2, relief = "ridge")
+        self.frame4.place(x = 685, y = 160, width = 665, height = 290)
+
+        self.frame5 = Frame(self.root, bg = "white", bd = 4,  highlightthickness =2, relief = "ridge")
+        self.frame5.place(x = 10, y = 450, width = 665, height = 290)
+
+        self.frame6 = Frame(self.root, bg = "white", bd = 4,  highlightthickness =2, relief = "ridge")
+        self.frame6.place(x = 685, y = 450, width = 665, height = 290)
+        
+        self.btn_abrir_arq = Button(self.frame2, text = "Abrir Arquivos", font = ("Arial", 10, "bold"), bd = 2, bg = '#102db2', fg = 'white', command = lambda:self.read_dados_mens())
+        self.btn_abrir_arq.place(x = 10, y = 10, width = 100, height = 50)
+
+        self.btn_gerar_graph = Button(self.frame2, text = "Plotar", font = ("Arial", 10, "bold"), bd = 2, bg = '#102db2', fg = 'white', command = self.plot_data)
+        self.btn_gerar_graph.place(x = 200, y = 10, width = 100, height = 50)
+
+        self.label_diam = Label(self.frame2, text = 'L (mm)', bg = 'white', font = ("Arial", 10, "bold"))
+        self.label_diam.place(x = 350, y = 10, height = 20)
+
+        self.entry_diam = Entry(self.frame2, bg = 'white', font = ("Arial", 10, "bold"))
+        self.entry_diam.place(x = 400, y =10, width = 100)
+
+        self.label_vel = Label(self.frame2, text = 'V (m/s)', bg = 'white', font = ("Arial", 10, "bold"))
+        self.label_vel.place(x = 350, y = 40, height = 20)
+
+        self.entry_vel = Entry(self.frame2, bg = 'white', font = ("Arial", 10, "bold"))
+        self.entry_vel.place(x = 400, y =40, width = 100)
+
+        self.comb_pontos = ttk.Combobox(self.frame2, state='readonly')
+        self.comb_pontos.place (x = 520, y =10, width = 150)
+
+        self.btn_PSD_ponto = Button(self.frame2, text = "Plotar", font = ("Arial", 10, "bold"), bd = 2, bg = '#102db2', fg = 'white', command = self.PSD_ponto)
+        self.btn_PSD_ponto.place(x = 700, y = 10, width = 100, height = 50)
+
+        self.comb_perfil = ttk.Combobox(self.frame2, state='readonly')
+        self.comb_perfil.place (x = 520, y =40, width = 150)
+
+    def on_closing():
+        if messagebox.askokcancel("SAIR", "Você quer sair do App?"):
+            root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_closing)
+
+        
+Application()
