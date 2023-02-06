@@ -1,0 +1,329 @@
+import numpy as np
+from matplotlib import pyplot as plt
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Feb 18 17:05:10 2021
+
+@author: LEAUNB
+"""
+
+import tkinter as tk
+from tkinter import filedialog
+import codecs
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+
+import numpy as np
+from scipy.fftpack import fft
+from scipy import signal
+import statistics as st
+from statsmodels.tsa.stattools import acf
+from scipy import integrate as intg
+import numpy as geek
+import numpy as np
+from matplotlib.ticker import MaxNLocator
+
+
+matplotlib.style.use('default')
+
+
+#Leitura de arquivos
+Vel_Torre_baixa =  "velocidade-torre-baixa-liso.txt"
+Vel_Torre_media =  "velocidade-torre-media-liso.txt"
+Vel_Torre_alta = "velocidade-torre-alta-liso.txt"
+Uinf = 10
+Iturb_baixa = "IT-torre-baixa-liso.txt"
+Iturb_media = "IT-torre-media-liso.txt"
+Iturb_alta = "IT-torre-alta-liso.txt"
+
+#MONTANTE
+Vel_montante_liso = "velocidade-montante-liso.txt"
+Vel_montante_rugoso = "velocidade-montante-RUGOSO.txt"
+Iturb_montante_liso = "IT-montante-liso.txt"
+Iturb_montante_rugoso = "IT-montante-RUGOSO.txt"
+
+#Abrir arquivos e primeiras configurações para o contorno de velocidade
+abrir_baixa = codecs.open(Vel_Torre_baixa)
+abrir_media= codecs.open(Vel_Torre_media)
+abrir_alta= codecs.open(Vel_Torre_alta)
+VTB = np.loadtxt(abrir_baixa)
+VTM= np.loadtxt(abrir_media)
+VTA= np.loadtxt(abrir_alta)
+VTB_adm = np.array(VTB/Uinf)
+VTM_adm = np.array(VTM/Uinf)
+VTA_adm = np.array(VTA/Uinf)
+
+
+#Abrir arquivos e primeiras configurações para a intensidade de turbulência
+Ie_baixa = codecs.open(Iturb_baixa)
+Ie_media = codecs.open(Iturb_media)
+Ie_alta = codecs.open(Iturb_alta)
+
+IB = np.loadtxt(Ie_baixa)
+IM = np.loadtxt(Ie_media)
+IA = np.loadtxt(Ie_alta)
+
+IB_adm = np.array(IB)
+IM_adm = np.array(IM)
+IA_adm = np.array(IA)
+
+# ABRIR ARQUIVOS MONTANTE
+abrir_MONT_LISO = codecs.open(Vel_montante_liso)
+abrir_MONT_RUG= codecs.open(Vel_montante_rugoso)
+Ie_MONT_LISO = codecs.open(Iturb_montante_liso)
+Ie_MONT_RUG = codecs.open(Iturb_montante_rugoso)
+
+VML = np.loadtxt(abrir_MONT_LISO)
+VMR= np.loadtxt(abrir_MONT_RUG)
+IML = np.loadtxt(Ie_MONT_LISO)
+IMR = np.loadtxt(Ie_MONT_RUG)
+
+# Definir limites admensionais Sem Rugosidade
+x = np.linspace(0.2,3.2,16)
+x2_baixa = np.linspace(float(5/225),float(305/225),30)
+x2_media = np.linspace(float(5/225),float(445/225),44)
+x2_alta  = np.linspace(float(5/225),float(595/225),59)
+
+# Definir limites admensionais Com Rugosidade
+#x = np.linspace(0.2,3.2,16) # Eixo x admensionaç
+#x2_baixa = np.linspace(float(35/225),float(315/225),28)
+#x2_media = np.linspace(float(35/225),float(445/225),41)
+#x2_alta  = np.linspace(float(35/225),float(595/225),56)
+
+# Definir limites admensionais Com Rugosidade MONTANTE
+x = np.linspace(0.2,3.2,16) # Eixo x admensionaç
+x2_mont_liso = np.linspace(float(5/225),float(875/225),87)
+x2_mont_rugoso = np.linspace(float(35/225),float(845/225),81)
+
+
+r = (225/2) #RAIO DA TURBINA
+X_baixa= np.linspace(0.3,1.1)
+X_media= np.linspace(0.4,1)
+X_alta= np.linspace(0.6,1)
+
+XB, YB = np.meshgrid(x, x2_baixa)
+XM, YM = np.meshgrid(x, x2_media)
+XA, YA = np.meshgrid(x, x2_alta)
+XML,YML= np.meshgrid(x, x2_mont_liso)
+XMR,YMR= np.meshgrid(x, x2_mont_rugoso)
+
+# Definir limites e vetor de linha do rotor
+x_line = np.linspace(-0.4,2)
+zdB = [(140)/225]*len(x_line)  # Vetor linha de centro
+zd1B = [(140+112)/225]*len(XB)
+zd2B = [(140-112)/225]*len(XB)
+
+zdM = [(280)/225]*len(x_line)  # Vetor linha de centro
+zd1M = [(280+112)/225]*len(XM)
+zd2M = [(280-112)/225]*len(XM)
+
+zdA = [(440)/225]*len(x_line)  # Vetor linha de centro
+zd1A = [(440+112)/225]*len(XA)
+zd2A = [(440-112)/225]*len(XA)
+
+
+#Figura dos perfis de velocidade
+
+#Definições de eixo
+
+
+## FIGURA TORRE BAIXA
+
+fig, ax = plt.subplots(1,16,sharex=True,sharey=True)
+fig.tight_layout()
+
+
+#Plot em conjunto Torre Baixa
+
+for k in range(0,16,1):
+    ax[k].plot(VTB[:,k]/max(VTB[:,k]), YB, 'k.-', label='_nolegend_')
+    ax[k].plot(IB[:,k]/max(IB[:,k]), YB,   'b+-', label='_nolegend_')
+
+#lines = []
+#labels = []
+
+
+#grid
+for n in range(0,16,1):
+    ax[n].grid(True)
+
+fig.suptitle('Rotor a 145 mm de altura - Jusante sem Rugosidade',fontsize = 16)
+
+
+
+for j in range(1,16,1):
+    ax[j].yaxis.set_ticks_position('none') # retirar marcações e números do eixo y
+    ax[j].spines['left'].set_visible(False) # retirar margem esquerda
+
+
+
+for i in range(0,15,1):
+    ax[i].spines['right'].set_visible(False) #retirar margem direita
+    
+
+for l in range(0,16,1):
+    ax[l].plot(x_line, zdB, '-.', color='k')  #eixo turbina  
+    
+
+#LEGENDAS DE EIXOS
+ax[0].set_ylabel("Z/D")
+ax[0].set_xlabel("X/D=0.2")
+ax[1].set_xlabel("X/D=0.4")
+ax[2].set_xlabel("X/D=0.6")
+ax[3].set_xlabel("X/D=0.8")
+ax[4].set_xlabel("X/D=1.0")
+ax[5].set_xlabel("X/D=1.2")
+ax[6].set_xlabel("X/D=1.4")
+ax[7].set_xlabel("X/D=1.6")
+ax[8].set_xlabel("X/D=1.8")
+ax[9].set_xlabel("X/D=2.0")
+ax[10].set_xlabel("X/D=2.2")
+ax[11].set_xlabel("X/D=2.4")
+ax[12].set_xlabel("X/D=2.6")
+ax[13].set_xlabel("X/D=2.8")
+ax[14].set_xlabel("X/D=3.0")
+ax[15].set_xlabel("X/D=3.2")
+
+#zerar eixo em um ponto
+ax[0].set_xlim(-0.1,1.1)
+ax[0].set_ylim(0,1.45)
+
+#ax[0].set_xticks(np.arange(0.3, 1))
+
+plt.show()
+
+
+#________________________________________________________________________________
+## FIGURA TORRE MÉDIA
+
+fig1, ax1 = plt.subplots(1,16,sharex=True,sharey=True)
+fig1.tight_layout()
+
+
+#Plot em conjunto Torre Baixa
+
+for k in range(0,16,1):
+    ax1[k].plot(VTM[:,k]/max(VTM[:,k]), YM, 'k.-', label='_nolegend_')
+    ax1[k].plot(IM[:,k]/max(IM[:,k]), YM,   'b+-', label='_nolegend_')
+
+#lines = []
+#labels = []
+
+
+#grid
+for n in range(0,16,1):
+    ax1[n].grid(True)
+
+fig1.suptitle('Rotor a 295 mm de altura - Jusante sem Rugosidade',fontsize = 16)
+
+
+
+for j in range(1,16,1):
+    ax1[j].yaxis.set_ticks_position('none') # retirar marcações e números do eixo y
+    ax1[j].spines['left'].set_visible(False) # retirar margem esquerda
+
+
+
+for i in range(0,15,1):
+    ax1[i].spines['right'].set_visible(False) #retirar margem direita
+    
+
+for l in range(0,16,1):
+    ax1[l].plot(x_line, zdM, '-.', color='k')  #eixo turbina  
+    
+
+#LEGENDAS DE EIXOS
+ax1[0].set_ylabel("Z/D")
+ax1[0].set_xlabel("X/D=0.2")
+ax1[1].set_xlabel("X/D=0.4")
+ax1[2].set_xlabel("X/D=0.6")
+ax1[3].set_xlabel("X/D=0.8")
+ax1[4].set_xlabel("X/D=1.0")
+ax1[5].set_xlabel("X/D=1.2")
+ax1[6].set_xlabel("X/D=1.4")
+ax1[7].set_xlabel("X/D=1.6")
+ax1[8].set_xlabel("X/D=1.8")
+ax1[9].set_xlabel("X/D=2.0")
+ax1[10].set_xlabel("X/D=2.2")
+ax1[11].set_xlabel("X/D=2.4")
+ax1[12].set_xlabel("X/D=2.6")
+ax1[13].set_xlabel("X/D=2.8")
+ax1[14].set_xlabel("X/D=3.0")
+ax1[15].set_xlabel("X/D=3.2")
+
+#zerar eixo em um ponto
+ax1[0].set_xlim(-0.1,1.1)
+ax1[0].set_ylim(0,2.05)
+
+#ax[0].set_xticks(np.arange(0.3, 1))
+
+plt.show()
+
+
+#________________________________________________________________________________
+## FIGURA TORRE ALTA
+
+fig2, ax2 = plt.subplots(1,16,sharex=True,sharey=True)
+fig2.tight_layout()
+
+
+#Plot em conjunto Torre Baixa
+
+for k in range(0,16,1):
+    ax2[k].plot(VTA[:,k]/max(VTA[:,k]), YA, 'k.-', label='_nolegend_')
+    ax2[k].plot(IA[:,k]/max(IA[:,k]), YA,   'b+-', label='_nolegend_')
+
+#lines = []
+#labels = []
+
+
+#grid
+for n in range(0,16,1):
+    ax2[n].grid(True)
+
+fig2.suptitle('Rotor a 445 mm de altura - Jusante sem Rugosidade',fontsize = 16)
+
+
+
+for j in range(1,16,1):
+    ax2[j].yaxis.set_ticks_position('none') # retirar marcações e números do eixo y
+    ax2[j].spines['left'].set_visible(False) # retirar margem esquerda
+
+
+
+for i in range(0,15,1):
+    ax2[i].spines['right'].set_visible(False) #retirar margem direita
+    
+
+for l in range(0,16,1):
+    ax2[l].plot(x_line, zdA, '-.', color='k')  #eixo turbina  
+    
+
+#LEGENDAS DE EIXOS
+ax2[0].set_ylabel("Z/D")
+ax2[0].set_xlabel("X/D=0.2")
+ax2[1].set_xlabel("X/D=0.4")
+ax2[2].set_xlabel("X/D=0.6")
+ax2[3].set_xlabel("X/D=0.8")
+ax2[4].set_xlabel("X/D=1.0")
+ax2[5].set_xlabel("X/D=1.2")
+ax2[6].set_xlabel("X/D=1.4")
+ax2[7].set_xlabel("X/D=1.6")
+ax2[8].set_xlabel("X/D=1.8")
+ax2[9].set_xlabel("X/D=2.0")
+ax2[10].set_xlabel("X/D=2.2")
+ax2[11].set_xlabel("X/D=2.4")
+ax2[12].set_xlabel("X/D=2.6")
+ax2[13].set_xlabel("X/D=2.8")
+ax2[14].set_xlabel("X/D=3.0")
+ax2[15].set_xlabel("X/D=3.2")
+
+#zerar eixo em um ponto
+ax2[0].set_xlim(-0.5,1.2)
+ax2[0].set_ylim(0,2.7)
+
+#ax2[0].set_xticks(np.arange(-0.4, 1.2,3))
+
+plt.show()
+
