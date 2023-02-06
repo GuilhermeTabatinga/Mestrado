@@ -1,0 +1,231 @@
+import numpy as np
+from matplotlib import pyplot as plt
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Feb 18 17:05:10 2021
+
+@author: LEAUNB
+"""
+
+import tkinter as tk
+from tkinter import filedialog
+import codecs
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+
+import numpy as np
+from scipy.fftpack import fft
+from scipy import signal
+import statistics as st
+from statsmodels.tsa.stattools import acf
+from scipy import integrate as intg
+import numpy as geek
+import numpy as np
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+matplotlib.style.use('default')
+
+
+#barra de erro
+barra_de_erro = "barra-de-erro-dados.txt"
+abrir_barra_erro = codecs.open(barra_de_erro)
+barra_erro = np.loadtxt(abrir_barra_erro)
+
+
+#linhas de tendência dos CPs
+X = np.arange(0.74,1.91,0.03)
+
+Y1 = np.array(-0.3274*(X*X)+0.78886*X-0.1842) #BAIXA SEM RUGOSIDADE
+Y2 = np.array(-0.2047*(X*X)+0.5454*X-0.1396)  #MÉDIA SEM RUGOSIDADE
+Y3 = np.array(-0.1943*(X*X)+0.5256*X-0.1221)  #ALTA SEM RUGOSIDADE
+
+Y11 = np.array(-0.1936*(X*X)+0.4512*X-0.0078) #BAIXA COM RUGOSIDADE
+Y22 = np.array(-0.1986*(X*X)+0.5658*X-0.1864) #MÉDIA COM RUGOSIDADE
+Y33 = np.array(-0.2809*(X*X)+0.7048*X-0.1471) #ALTA COM RUGOSIDADE
+
+#Pontos de máximo
+
+x_baixa_liso = 0.78886/(2*0.3274)  # 1.21
+x_baixa_rugoso = 0.4512/(2*0.1936) # 1.1653
+x_alta_liso = 0.5256/(2*0.1943)    # 1.3525
+x_alta_rugoso = 0.7048/(2*0.2809)  # 1.2545
+
+print("X máximo torre baixa liso é: %.4f" % x_baixa_liso)
+print("X máximo torre baixa rugoso é: %.4f" % x_baixa_rugoso)
+print("X máximo torre alta liso é: %.4f" % x_alta_liso)
+print("X máximo torre alta rugoso é: %.4f" % x_alta_rugoso)
+
+
+y_baixa_liso = -0.3274*(x_baixa_liso*x_baixa_liso)+0.78886*x_baixa_liso-0.1842          #0.29
+y_baixa_rugoso = -0.1936*(x_baixa_rugoso*x_baixa_rugoso)+0.4512*x_baixa_rugoso-0.0078   #0.255
+y_alta_liso = -0.1943*(x_alta_liso*x_alta_liso)+0.5256*x_alta_liso-0.1221               #0.2333 
+y_alta_rugoso = -0.2809*(x_alta_rugoso*x_alta_rugoso)+0.7048*x_alta_rugoso-0.1471       #0.2950 
+
+print("y máximo torre baixa liso é: %.4f" %y_baixa_liso)
+print("y máximo torre baixa rugoso é: %.4f" %y_baixa_rugoso)
+print("y máximo torre alta liso é: %.4f" %y_alta_liso)
+print("y máximo torre alta rugoso é: %.4f" %y_alta_rugoso)
+
+fig, ax = plt.subplots()
+
+ax.plot(X,Y1,'o', markersize=np.sqrt(5), color = 'k')
+ax.plot(X,Y2,'^', markersize=np.sqrt(10), color = 'r')
+ax.plot(X,Y3,'*', markersize=np.sqrt(5), color = 'b')
+#ax[0].plot(X,Y11,'ro', markersize=np.sqrt(5), color = 'b')
+#ax[0].plot(X,Y22,'r^', markersize=np.sqrt(10), color = 'b')
+#ax[0].plot(X,Y33,'r-.', markersize=np.sqrt(5), color = 'b')
+
+#plotar erros
+ax.errorbar(X,Y1, yerr=barra_erro[:,1], fmt='k.', ecolor='k', linestyle=None, capsize=2)
+ax.errorbar(X,Y2, yerr=barra_erro[:,1], fmt='r.', ecolor='r', linestyle=None, capsize=2)
+ax.errorbar(X,Y3, yerr=barra_erro[:,1], fmt='b.', ecolor='b', linestyle=None, capsize=2)
+
+
+#ax[1].plot(X,Y1,'ro', markersize=np.sqrt(5), color = 'k')
+#ax[1].plot(X,Y2,'r^', markersize=np.sqrt(10), color = 'k')
+#ax[1].plot(X,Y3,'r-.', markersize=np.sqrt(5), color = 'k')
+
+#ax[2].plot(X,Y11,'ro', markersize=np.sqrt(5), color = 'b')
+#ax[2].plot(X,Y22,'r^', markersize=np.sqrt(10), color = 'b')
+#ax[2].plot(X,Y33,'r-.', markersize=np.sqrt(5), color = 'b')
+
+ax.legend(["h1 s/ rugosidade", "h2 s/ rugosidade","h3 s/ rugosidade"])
+#ax[1].legend(["Baixa s/ Rugosidade", "Média s/ rugosidade","Alta s/ Rugosidade"], loc="upper right")
+#ax[2].legend(["Baixa c/ Rugosidade","Média c/ rugosidade", "Alta c/ Rugosidade"], loc="upper right")
+ax.set_ylabel('CP')
+#ax[1].set_ylabel('CP')
+#ax[2].set_ylabel('CP')
+ax.set_xlabel('TSR')
+
+ax.set_xlim(0.7,1.9)
+#ax[1].set_xlim(0.7,1.9)
+#ax[2].set_xlim(0.7,1.9)
+
+ax.set_ylim(0.10,0.35)
+#ax[1].set_ylim(0.10,0.45)
+#ax[2].set_ylim(0.10,0.45)
+
+
+ax.grid()
+#ax[1].grid()
+#ax[2].grid()
+
+fig.suptitle('Gráfico de Coeficiente de Potência(CP) x TSR')
+
+plt.show()
+
+
+
+#---------------------------
+
+
+fig3, ax3 = plt.subplots()
+
+#ax3.plot(X,Y1,'o', markersize=np.sqrt(5), color = 'k')
+#ax3.plot(X,Y2,'^', markersize=np.sqrt(10), color = 'r')
+ax3.plot(X,Y3,'o', markersize=np.sqrt(5), color = 'k')
+#ax3.plot(X,Y11,'*', markersize=np.sqrt(5), color = 'b')
+#ax3.plot(X,Y22,'r^', markersize=np.sqrt(10), color = 'b')
+ax3.plot(X,Y33,'*', markersize=np.sqrt(5), color = 'b')
+
+#plotar erros
+#ax3.errorbar(X,Y1, yerr=barra_erro[:,1], fmt='k.', ecolor='k', linestyle=None, capsize=2)
+#ax3.errorbar(X,Y2, yerr=barra_erro[:,1], fmt='r.', ecolor='r', linestyle=None, capsize=2)
+ax3.errorbar(X,Y3, yerr=barra_erro[:,1], fmt='k.', ecolor='k', linestyle=None, capsize=2)
+#ax3.errorbar(X,Y11, yerr=barra_erro[:,3], fmt='b.', ecolor='b', linestyle=None, capsize=2)
+#ax3.errorbar(X,Y2, yerr=barra_erro[:,1], fmt='r.', ecolor='r', linestyle=None, capsize=2)
+ax3.errorbar(X,Y33, yerr=barra_erro[:,5], fmt='b.', ecolor='b', linestyle=None, capsize=2)
+
+
+#ax[1].plot(X,Y1,'ro', markersize=np.sqrt(5), color = 'k')
+#ax[1].plot(X,Y2,'r^', markersize=np.sqrt(10), color = 'k')
+#ax[1].plot(X,Y3,'r-.', markersize=np.sqrt(5), color = 'k')
+
+#ax[2].plot(X,Y11,'ro', markersize=np.sqrt(5), color = 'b')
+#ax[2].plot(X,Y22,'r^', markersize=np.sqrt(10), color = 'b')
+#ax[2].plot(X,Y33,'r-.', markersize=np.sqrt(5), color = 'b')
+
+ax3.legend(["h2 s/ rugosidade", "h2 c/ rugosidade"], loc="upper right")
+#ax[1].legend(["Baixa s/ Rugosidade", "Média s/ rugosidade","Alta s/ Rugosidade"], loc="upper right")
+#ax[2].legend(["Baixa c/ Rugosidade","Média c/ rugosidade", "Alta c/ Rugosidade"], loc="upper right")
+ax3.set_ylabel('CP')
+#ax[1].set_ylabel('CP')
+#ax[2].set_ylabel('CP')
+ax3.set_xlabel('TSR')
+
+ax3.set_xlim(0.7,1.9)
+#ax[1].set_xlim(0.7,1.9)
+#ax[2].set_xlim(0.7,1.9)
+
+ax3.set_ylim(0.10,0.35)
+#ax[1].set_ylim(0.10,0.45)
+#ax[2].set_ylim(0.10,0.45)
+
+
+ax3.grid()
+#ax[1].grid()
+#ax[2].grid()
+
+fig3.suptitle('Gráfico de Coeficiente de Potência(CP) x TSR - H2')
+
+plt.show()
+
+#----------------------------------------------------------------------------------
+fig1, ax1 = plt.subplots()
+
+ax1.plot(X,Y1,'ro', markersize=np.sqrt(5), color = 'k')
+ax1.plot(X,Y3,'r-.', markersize=np.sqrt(5), color = 'k')
+
+ax1.legend(["H1 (145 mm) s/ Rugosidade","H2 (445 mm) s/ Rugosidade"], loc="upper right")
+
+ax1.set_xlim(0.7,1.9)
+ax1.set_ylim(0.12,0.32)
+ax1.grid()
+
+ax1.annotate('CP=0.291, TSR=1.21', xy=(x_baixa_liso,y_baixa_liso),size=10)
+ax1.annotate('CP=0.233, TSR=1.35', xy=(x_alta_liso,y_alta_liso),size=10)
+
+ax1.arrow(x_baixa_liso,y_baixa_liso,-5,0, width = 0.000001)
+ax1.arrow(x_alta_liso,y_alta_liso,-5,0,width = 0.000001)
+ax1.arrow(x_baixa_liso,y_baixa_liso,0,-5, width = 0.000001)
+ax1.arrow(x_alta_liso,y_alta_liso,0,-5,width = 0.000001)
+
+fig1.suptitle('Gráfico de Coeficiente de Potência(CP) x TSR - Superfície Lisa')
+
+fig1.supxlabel('TSR')
+fig1.supylabel('CP')
+
+plt.show()
+
+#----------------------------------------------------------------------------------
+fig2, ax2 = plt.subplots()
+
+ax2.plot(X,Y11,'ro', markersize=np.sqrt(5), color = 'k')
+ax2.plot(X,Y33,'r-.', markersize=np.sqrt(5), color = 'k')
+
+ax2.legend(["H1 (145 mm) c/ Rugosidade","H2 (445 mm) c/ Rugosidade"], loc="upper right")
+
+ax2.set_xlim(0.7,1.9)
+ax2.set_ylim(0.12,0.32)
+ax2.grid()
+
+ax2.annotate('CP=0.255, TSR=1.16', xy=(x_baixa_rugoso,y_baixa_rugoso),size=10)
+ax2.annotate('CP=0.295, TSR=1.25', xy=(x_alta_rugoso,y_alta_rugoso),size=10)
+
+ax2.arrow(x_baixa_rugoso,y_baixa_rugoso,-5,0, width = 0.000001)
+ax2.arrow(x_alta_rugoso,y_alta_rugoso,-5,0,width = 0.000001)
+ax2.arrow(x_baixa_rugoso,y_baixa_rugoso,0,-5, width = 0.000001)
+ax2.arrow(x_alta_rugoso,y_alta_rugoso,0,-5,width = 0.000001)
+
+fig2.suptitle('Gráfico de Coeficiente de Potência(CP) x TSR - Superfície com Rugosidade')
+
+fig2.supxlabel('TSR')
+fig2.supylabel('CP')
+
+plt.show()
+
+#-----------------------------------------------------
+# RUGOSO
