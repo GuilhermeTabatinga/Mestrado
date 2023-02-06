@@ -1,0 +1,206 @@
+import numpy as np
+from matplotlib import pyplot as plt
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Feb 18 17:05:10 2021
+
+@author: LEAUNB
+"""
+
+import tkinter as tk
+from tkinter import filedialog
+import codecs
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+
+import numpy as np
+from scipy.fftpack import fft
+from scipy import signal
+import statistics as st
+from statsmodels.tsa.stattools import acf
+from scipy import integrate as intg
+import numpy as geek
+import numpy as np
+from matplotlib.ticker import MaxNLocator
+
+
+matplotlib.style.use('default')
+
+
+
+#MONTANTE
+Vel_montante_liso = "velocidade-montante-liso-copia.txt"
+Vel_montante_rugoso = "velocidade-montante-rugoso-02-06-21.txt"
+Iturb_montante_liso = "IT-montante-liso-copia.txt"
+Iturb_montante_rugoso = "IT-montante-rugoso-02-06-21.txt"
+
+# ABRIR ARQUIVOS MONTANTE
+abrir_MONT_LISO = codecs.open(Vel_montante_liso)
+abrir_MONT_RUG= codecs.open(Vel_montante_rugoso)
+Ie_MONT_LISO = codecs.open(Iturb_montante_liso)
+Ie_MONT_RUG = codecs.open(Iturb_montante_rugoso)
+
+VML = np.loadtxt(abrir_MONT_LISO)
+VMR= np.loadtxt(abrir_MONT_RUG)
+IML = np.loadtxt(Ie_MONT_LISO)
+IMR = np.loadtxt(Ie_MONT_RUG)
+
+# Definir limites admensionais Sem Rugosidade
+#x = np.linspace(0.2,3.2,16)
+#x2_baixa = np.linspace(float(5/225),float(305/225),30)
+#x2_media = np.linspace(float(5/225),float(445/225),44)
+#x2_alta  = np.linspace(float(5/225),float(595/225),59)
+
+# Definir limites admensionais Com Rugosidade
+#x = np.linspace(0.2,3.2,16) # Eixo x admensionaç
+x2_baixa = np.linspace(float(35/225),float(315/225),28)
+x2_media = np.linspace(float(35/225),float(445/225),41)
+x2_alta  = np.linspace(float(35/225),float(595/225),56)
+
+# Definir limites admensionais Com Rugosidade MONTANTE
+x = np.linspace(0,2,6) # Eixo x admensionaç
+x1= np.linspace(0,2.5,7)
+x2_mont_liso = np.linspace(float(5/225),float(206/225),201)
+x2_mont_rugoso = np.linspace(float(35/225),float(161/225),126)
+
+
+r = (225/2) #RAIO DA TURBINA
+X_baixa= np.linspace(0,1.1)
+X_media= np.linspace(0,1.1)
+X_alta= np.linspace(0,1.1)
+
+XB, YB = np.meshgrid(x, x2_baixa)
+XM, YM = np.meshgrid(x, x2_media)
+XA, YA = np.meshgrid(x, x2_alta)
+XML,YML= np.meshgrid(x, x2_mont_liso)
+XMR,YMR= np.meshgrid(x, x2_mont_rugoso)
+
+# Definir limites e vetor de linha do rotor
+x_line = np.linspace(-0.4,2)
+zdB = [(140)/225]*len(x_line)  # Vetor linha de centro
+zd1B = [(140+112)/225]*len(XB)
+zd2B = [(140-112)/225]*len(XB)
+
+zdM = [(280)/225]*len(x_line)  # Vetor linha de centro
+zd1M = [(280+112)/225]*len(XM)
+zd2M = [(280-112)/225]*len(XM)
+
+zdA = [(440)/225]*len(x_line)  # Vetor linha de centro
+zd1A = [(440+112)/225]*len(XA)
+zd2A = [(440-112)/225]*len(XA)
+
+
+
+#_________________________________________________________________________#
+## FIGURA SEM RUGOSIDADE
+
+fig, ax = plt.subplots(1,3,sharex=True,sharey=True)
+fig.tight_layout()
+
+
+#Plot em conjunto Torre Baixa
+
+for k in range(0,3,1):
+    ax[k].plot(VML[:,k]/max(VML[:,k]), YML, 'k.-', label='_nolegend_',markersize=np.sqrt(9))
+    ax[k].plot(IML[:,k]/max(IML[:,k]), YML,   'b:', label='_nolegend_',markersize=np.sqrt(9))
+
+#lines = []
+#labels = []
+
+
+#grid
+for n in range(0,3,1):
+    ax[n].grid(True)
+
+fig.suptitle('Montante sem Rugosidade',fontsize = 16)
+
+
+
+for j in range(1,3,1):
+    ax[j].yaxis.set_ticks_position('none') # retirar marcações e números do eixo y
+    ax[j].spines['left'].set_visible(False) # retirar margem esquerda
+
+
+
+for i in range(0,2,1):
+    ax[i].spines['right'].set_visible(False) #retirar margem direita
+    
+
+#for l in range(0,6,1):
+#    ax[l].plot(x_line, zdB, '-.', color='k')  #eixo turbina  
+    
+
+#LEGENDAS DE EIXOS
+ax[0].set_ylabel("Z/D")
+#ax[0].set_xlabel("X/D=-2.5")
+#ax[1].set_xlabel("X/D=-2")
+#ax[2].set_xlabel("X/D=-1.5")
+ax[0].set_xlabel("X/D=-1")
+ax[1].set_xlabel("X/D=-0.5")
+ax[2].set_xlabel("X/D=0")
+
+#zerar eixo em um ponto
+ax[0].set_xlim(-0.1,1.1)
+ax[0].set_ylim(0,0.1)
+
+#ax[0].set_xticks(np.arange(0.3, 1))
+
+plt.show()
+
+#__________________________________________________________________________#
+## FIGURA RUGOSIDADE
+
+fig1, ax1 = plt.subplots(1,6,sharex=True,sharey=True)
+fig1.tight_layout()
+
+
+#Plot em conjunto Torre Baixa
+
+for k in range(0,6,1):
+    ax1[k].plot(VMR[:,k]/max(VMR[:,k]), YMR, 'k.-', label='_nolegend_',markersize=np.sqrt(9) )
+    ax1[k].plot(IMR[:,k]/max(IMR[:,k]), YMR,   'b:', label='_nolegend_',markersize=np.sqrt(9))
+
+#lines = []
+#labels = []
+
+
+#grid
+for n in range(0,6,1):
+    ax1[n].grid(True)
+
+fig1.suptitle('Montante com Rugosidade',fontsize = 16)
+
+
+
+for j in range(1,6,1):
+    ax1[j].yaxis.set_ticks_position('none') # retirar marcações e números do eixo y
+    ax1[j].spines['left'].set_visible(False) # retirar margem esquerda
+
+
+
+for i in range(0,5,1):
+    ax1[i].spines['right'].set_visible(False) #retirar margem direita
+    
+
+#for l in range(0,6,1):
+#    ax1[l].plot(x_line, zdB, '-.', color='k')  #eixo turbina  
+    
+
+#LEGENDAS DE EIXOS
+ax1[0].set_ylabel("Z/D")
+ax1[0].set_xlabel("X/D=-2.5")
+ax1[1].set_xlabel("X/D=-2")
+ax1[2].set_xlabel("X/D=-1.5")
+ax1[3].set_xlabel("X/D=-1")
+ax1[4].set_xlabel("X/D=-0.5")
+ax1[5].set_xlabel("X/D=0")
+
+#zerar eixo em um ponto
+ax1[0].set_xlim(-0.1,1.1)
+ax1[0].set_ylim(0,0.5)
+
+#ax[0].set_xticks(np.arange(0.3, 1))
+
+plt.show()
+
