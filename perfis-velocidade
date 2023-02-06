@@ -1,0 +1,308 @@
+import numpy as np
+from matplotlib import pyplot as plt
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Feb 18 17:05:10 2021
+
+@author: LEAUNB
+"""
+
+import tkinter as tk
+from tkinter import filedialog
+import codecs
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+
+import numpy as np
+from scipy.fftpack import fft
+from scipy import signal
+import statistics as st
+from statsmodels.tsa.stattools import acf
+from scipy import integrate as intg
+import numpy as geek
+import numpy as np
+
+
+
+matplotlib.style.use('default')
+
+# X = int(input("Quantos pontos foram coletados no eixo X? "))
+
+# Z = int(input("Quantos pontos foram coletados no eixo Z? "))
+
+#Leitura de arquivos
+Vel_Torre_baixa =  "velocidade-torre-baixa-liso.txt"
+Vel_Torre_media =  "velocidade-torre-media-liso.txt"
+Vel_Torre_alta = "velocidade-torre-alta-liso.txt"
+Uinf = 10
+Iturb_baixa = "IT-torre-baixa-liso.txt"
+Iturb_media = "IT-torre-media-liso.txt"
+Iturb_alta = "IT-torre-alta-liso.txt"
+
+#Abrir arquivos e primeiras configurações para o contorno de velocidade
+abrir_baixa = codecs.open(Vel_Torre_baixa)
+abrir_media= codecs.open(Vel_Torre_media)
+abrir_alta= codecs.open(Vel_Torre_alta)
+VTB = np.loadtxt(abrir_baixa)
+VTM= np.loadtxt(abrir_media)
+VTA= np.loadtxt(abrir_alta)
+VTB_adm = np.array(VTB/Uinf)
+VTM_adm = np.array(VTM/Uinf)
+VTA_adm = np.array(VTA/Uinf)
+
+
+#Abrir arquivos e primeiras configurações para a intensidade de turbulência
+Ie_baixa = codecs.open(Iturb_baixa)
+Ie_media = codecs.open(Iturb_media)
+Ie_alta = codecs.open(Iturb_alta)
+
+IB = np.loadtxt(Ie_baixa)
+IM = np.loadtxt(Ie_media)
+IA = np.loadtxt(Ie_alta)
+
+IB_adm = np.array(IB)
+IM_adm = np.array(IM)
+IA_adm = np.array(IA)
+
+# Definir limites admensionais 
+x = np.linspace(0.2,3.2,16)
+x2_baixa = np.linspace(float(5/225),float(305/225),30)
+x2_media = np.linspace(float(5/225),float(445/225),44)
+x2_alta  = np.linspace(float(5/225),float(595/225),59)
+
+r = (225/2) #RAIO DA TURBINA
+X_baixa= np.linspace(0.3,1)
+X_media= np.linspace(0.4,1)
+X_alta= np.linspace(0.6,1)
+
+XB, YB = np.meshgrid(x, x2_baixa)
+XM, YM = np.meshgrid(x, x2_media)
+XA, YA = np.meshgrid(x, x2_alta)
+
+# Definir limites e vetor de linha do rotor
+x_line = np.linspace(0,3.2)
+zdB = [(140)/225]*len(x_line)  # Vetor linha de centro
+zd1B = [(140+112)/225]*len(XB)
+zd2B = [(140-112)/225]*len(XB)
+
+zdM = [(280)/225]*len(x_line)  # Vetor linha de centro
+zd1M = [(280+112)/225]*len(XM)
+zd2M = [(280-112)/225]*len(XM)
+
+zdA = [(440)/225]*len(x_line)  # Vetor linha de centro
+zd1A = [(440+112)/225]*len(XA)
+zd2A = [(440-112)/225]*len(XA)
+
+#Figura dos perfis de velocidade
+
+#fig, ax = plt.subplots(2, 2, figsize=(10,7))
+fig, ax = plt.subplots(1,3)
+fig.tight_layout()
+
+#Plot em conjunto Torre Baixa
+
+ax[0].plot(VTB[:,0]/max(VTB[:,0]), YB,   'bp-')
+ax[0].plot(VTB[:,1]/max(VTB[:,1]), YB,   'c|-')
+ax[0].plot(VTB[:,2]/max(VTB[:,2]), YB,   'go-')
+ax[0].plot(VTB[:,3]/max(VTB[:,3]), YB,   'm_-')
+ax[0].plot(VTB[:,4]/max(VTB[:,4]), YB,   'r.-')
+ax[0].plot(VTB[:,5]/max(VTB[:,5]), YB,   'y,-')
+ax[0].plot(VTB[:,6]/max(VTB[:,6]), YB,   'bv-')
+ax[0].plot(VTB[:,7]/max(VTB[:,7]), YB,   'c^-')
+ax[0].plot(VTB[:,8]/max(VTB[:,8]), YB,   'g<-')
+ax[0].plot(VTB[:,9]/max(VTB[:,9]), YB,   'm>-')
+ax[0].plot(VTB[:,10]/max(VTB[:,10]), YB, 'r1-')
+ax[0].plot(VTB[:,11]/max(VTB[:,11]), YB, 'ys-')
+ax[0].plot(VTB[:,12]/max(VTB[:,12]), YB, 'b+-')
+ax[0].plot(VTB[:,13]/max(VTB[:,13]), YB, 'ch-')
+ax[0].plot(VTB[:,14]/max(VTB[:,14]), YB, 'gd-')
+ax[0].plot(VTB[:,15]/max(VTB[:,15]), YB, 'mx-')
+#labels =["X/D=0.2","X/D=0.4","X/D=0.6","X/D=0.8","X/D=1.0","X/D=1.2","X/D=1.4","X/D=1.6","X/D=1.8","X/D=2.0","X/D=2.2","X/D=2.4","X/D=2.6","X/D=2.8","X/D=3.0","X/D=3.2"]
+fig.legend() 
+#Plot em conjunto Torre Média
+
+ax[1].plot(VTM[:,0]/max(VTM[:,0]), YM,   'bp-')
+ax[1].plot(VTM[:,1]/max(VTM[:,1]), YM,   'c|-')
+ax[1].plot(VTM[:,2]/max(VTM[:,2]), YM,   'go-')
+ax[1].plot(VTM[:,3]/max(VTM[:,3]), YM,   'm_-')
+ax[1].plot(VTM[:,4]/max(VTM[:,4]), YM,   'r.-')
+ax[1].plot(VTM[:,5]/max(VTM[:,5]), YM,   'y,-')
+ax[1].plot(VTM[:,6]/max(VTM[:,6]), YM,   'bv-')
+ax[1].plot(VTM[:,7]/max(VTM[:,7]), YM,   'c^-')
+ax[1].plot(VTM[:,8]/max(VTM[:,8]), YM,   'g<-')
+ax[1].plot(VTM[:,9]/max(VTM[:,9]), YM,   'm>-')
+ax[1].plot(VTM[:,10]/max(VTM[:,10]), YM, 'r1-')
+ax[1].plot(VTM[:,11]/max(VTM[:,11]), YM, 'ys-')
+ax[1].plot(VTM[:,12]/max(VTM[:,12]), YM, 'b+-')
+ax[1].plot(VTM[:,13]/max(VTM[:,13]), YM, 'ch-')
+ax[1].plot(VTM[:,14]/max(VTM[:,14]), YM, 'gd-')
+ax[1].plot(VTM[:,15]/max(VTM[:,15]), YM, 'mx-')
+
+#Plot em conjunto Torre Alta
+
+ax[2].plot(VTA[:,0]/max(VTA[:,0]), YA,  'bp-',label="X/D=0.2")
+ax[2].plot(VTA[:,1]/max(VTA[:,1]), YA,  'c|-',label="X/D=0.4")
+ax[2].plot(VTA[:,2]/max(VTA[:,2]), YA,  'go-',label="X/D=0.6")
+ax[2].plot(VTA[:,3]/max(VTA[:,3]), YA,  'm_-',label="X/D=0.8")
+ax[2].plot(VTA[:,4]/max(VTA[:,4]), YA,  'r.-',label="X/D=1.0")
+ax[2].plot(VTA[:,5]/max(VTA[:,5]), YA,  'y,-',label="X/D=1.2")
+ax[2].plot(VTA[:,6]/max(VTA[:,6]), YA,  'bv-',label="X/D=1.4")
+ax[2].plot(VTA[:,7]/max(VTA[:,7]), YA,  'c^-',label="X/D=1.6")
+ax[2].plot(VTA[:,8]/max(VTA[:,8]), YA,  'g<-',label="X/D=1.8")
+ax[2].plot(VTA[:,9]/max(VTA[:,9]), YA,  'm>-',label="X/D=2.0")
+ax[2].plot(VTA[:,10]/max(VTA[:,10]), YA,'r1-',label="X/D=2.2")
+ax[2].plot(VTA[:,11]/max(VTA[:,11]), YA,'ys-',label="X/D=2.4")
+ax[2].plot(VTA[:,12]/max(VTA[:,12]), YA,'b+-',label="X/D=2.6")
+ax[2].plot(VTA[:,13]/max(VTA[:,13]), YA,'ch-',label="X/D=2.8")
+ax[2].plot(VTA[:,14]/max(VTA[:,14]), YA,'gd-',label="X/D=3.0")
+ax[2].plot(VTA[:,15]/max(VTA[:,15]), YA,'mx-',label="X/D=3.2")
+
+
+#grid
+ax[0].grid(True)
+ax[1].grid(True)
+ax[2].grid(True)
+
+#fig.suptitle('Perfil de Velocidade - Torre Baixa - Jusante')
+
+
+#LEGENDAS DE EIXOS
+ax[0].set_ylabel("Z/R")
+ax[0].set_xlabel("$U/U_{0}$")
+ax[1].set_xlabel("$U/U_{0}$")
+ax[2].set_xlabel("$U/U_{0}$")
+
+#LEGENDAS
+#fig.legend(bbox_to_anchor=(.92,.75),labels=labels, loc='upper left')
+fig.legend() 
+
+#Eixo da turbina
+
+ax[0].plot(X_baixa, zdB, '-.', color='k')
+ax[1].plot(X_media, zdM, '-.', color='k')
+ax[2].plot(X_alta, zdA, '-.', color='k')
+
+#Títulos 
+ax[0].set_title('Torre a 145 mm - Sem Rugosidade')
+ax[1].set_title('Torre a 295 mm - Sem Rugosidade')
+ax[2].set_title('Torre a 445 mm - Sem Rugosidade')
+
+#zerar eixo em um ponto
+ax[0].set_xlim(0.3,)
+ax[1].set_xlim(0.4,)
+ax[2].set_xlim(0.6,)
+ax[0].set_ylim(0,)
+ax[1].set_ylim(0,)
+ax[2].set_ylim(0,)
+
+
+plt.show()
+
+#Figura dos perfis de intensidade de turbulência
+
+#fig, ax = plt.subplots(2, 2, figsize=(10,7))
+fig1, ax1 = plt.subplots(1,3)
+fig1.tight_layout()
+
+#Plot em conjunto Torre Baixa
+
+ax1[0].plot(IB[:,0]/max(IB[:,0]), YB,   'bp-')
+ax1[0].plot(IB[:,1]/max(IB[:,1]), YB,   'c|-')
+ax1[0].plot(IB[:,2]/max(IB[:,2]), YB,   'go-')
+ax1[0].plot(IB[:,3]/max(IB[:,3]), YB,   'm_-')
+ax1[0].plot(IB[:,4]/max(IB[:,4]), YB,   'r.-')
+ax1[0].plot(IB[:,5]/max(IB[:,5]), YB,   'y,-')
+ax1[0].plot(IB[:,6]/max(IB[:,6]), YB,   'bv-')
+ax1[0].plot(IB[:,7]/max(IB[:,7]), YB,   'c^-')
+ax1[0].plot(IB[:,8]/max(IB[:,8]), YB,   'g<-')
+ax1[0].plot(IB[:,9]/max(IB[:,9]), YB,   'm>-')
+ax1[0].plot(IB[:,10]/max(IB[:,10]), YB, 'r1-')
+ax1[0].plot(IB[:,11]/max(IB[:,11]), YB, 'ys-')
+ax1[0].plot(IB[:,12]/max(IB[:,12]), YB, 'b+-')
+ax1[0].plot(IB[:,13]/max(IB[:,13]), YB, 'ch-')
+ax1[0].plot(IB[:,14]/max(IB[:,14]), YB, 'gd-')
+ax1[0].plot(IB[:,15]/max(IB[:,15]), YB, 'mx-')
+#labels =["X/D=0.2","X/D=0.4","X/D=0.6","X/D=0.8","X/D=1.0","X/D=1.2","X/D=1.4","X/D=1.6","X/D=1.8","X/D=2.0","X/D=2.2","X/D=2.4","X/D=2.6","X/D=2.8","X/D=3.0","X/D=3.2"]
+#fig1.legend() 
+#Plot em conjunto Torre Média
+
+ax1[1].plot(IM[:,0]/max(IM[:,0]), YM,   'bp-')
+ax1[1].plot(IM[:,1]/max(IM[:,1]), YM,   'c|-')
+ax1[1].plot(IM[:,2]/max(IM[:,2]), YM,   'go-')
+ax1[1].plot(IM[:,3]/max(IM[:,3]), YM,   'm_-')
+ax1[1].plot(IM[:,4]/max(IM[:,4]), YM,   'r.-')
+ax1[1].plot(IM[:,5]/max(IM[:,5]), YM,   'y,-')
+ax1[1].plot(IM[:,6]/max(IM[:,6]), YM,   'bv-')
+ax1[1].plot(IM[:,7]/max(IM[:,7]), YM,   'c^-')
+ax1[1].plot(IM[:,8]/max(IM[:,8]), YM,   'g<-')
+ax1[1].plot(IM[:,9]/max(IM[:,9]), YM,   'm>-')
+ax1[1].plot(IM[:,10]/max(IM[:,10]), YM, 'r1-')
+ax1[1].plot(IM[:,11]/max(IM[:,11]), YM, 'ys-')
+ax1[1].plot(IM[:,12]/max(IM[:,12]), YM, 'b+-')
+ax1[1].plot(IM[:,13]/max(IM[:,13]), YM, 'ch-')
+ax1[1].plot(IM[:,14]/max(IM[:,14]), YM, 'gd-')
+ax1[1].plot(IM[:,15]/max(IM[:,15]), YM, 'mx-')
+
+#Plot em conjunto Torre Alta
+
+ax1[2].plot(IA[:,0]/max(IA[:,0]), YA,  'bp-',label="X/D=0.2")
+ax1[2].plot(IA[:,1]/max(IA[:,1]), YA,  'c|-',label="X/D=0.4")
+ax1[2].plot(IA[:,2]/max(IA[:,2]), YA,  'go-',label="X/D=0.6")
+ax1[2].plot(IA[:,3]/max(IA[:,3]), YA,  'm_-',label="X/D=0.8")
+ax1[2].plot(IA[:,4]/max(IA[:,4]), YA,  'r.-',label="X/D=1.0")
+ax1[2].plot(IA[:,5]/max(IA[:,5]), YA,  'y,-',label="X/D=1.2")
+ax1[2].plot(IA[:,6]/max(IA[:,6]), YA,  'bv-',label="X/D=1.4")
+ax1[2].plot(IA[:,7]/max(IA[:,7]), YA,  'c^-',label="X/D=1.6")
+ax1[2].plot(IA[:,8]/max(IA[:,8]), YA,  'g<-',label="X/D=1.8")
+ax1[2].plot(IA[:,9]/max(IA[:,9]), YA,  'm>-',label="X/D=2.0")
+ax1[2].plot(IA[:,10]/max(IA[:,10]), YA,'r1-',label="X/D=2.2")
+ax1[2].plot(IA[:,11]/max(IA[:,11]), YA,'ys-',label="X/D=2.4")
+ax1[2].plot(IA[:,12]/max(IA[:,12]), YA,'b+-',label="X/D=2.6")
+ax1[2].plot(IA[:,13]/max(IA[:,13]), YA,'ch-',label="X/D=2.8")
+ax1[2].plot(IA[:,14]/max(IA[:,14]), YA,'gd-',label="X/D=3.0")
+ax1[2].plot(IA[:,15]/max(IA[:,15]), YA,'mx-',label="X/D=3.2")
+
+
+#grid
+ax1[0].grid(True)
+ax1[1].grid(True)
+ax1[2].grid(True)
+
+#fig.suptitle('Perfil de Velocidade - Torre Baixa - Jusante')
+
+
+#LEGENDAS DE EIXOS
+ax1[0].set_ylabel("Z/R")
+ax1[0].set_xlabel("$U/U_{0}$")
+ax1[1].set_xlabel("$U/U_{0}$")
+ax1[2].set_xlabel("$U/U_{0}$")
+
+#LEGENDAS
+#fig.legend(bbox_to_anchor=(.92,.75),labels=labels, loc='upper left')
+fig1.legend() 
+
+#Eixo da turbina
+X_baixa1= np.linspace(-0.1,1)
+X_media1= np.linspace(-0.1,1)
+X_alta1= np.linspace(-0.1,1)
+
+ax1[0].plot(X_baixa1, zdB, '-.', color='k')
+ax1[1].plot(X_media1, zdM, '-.', color='k')
+ax1[2].plot(X_alta1, zdA, '-.', color='k')
+
+#Títulos 
+ax1[0].set_title('Torre a 145 mm - Sem Rugosidade')
+ax1[1].set_title('Torre a 295 mm - Sem Rugosidade')
+ax1[2].set_title('Torre a 445 mm - Sem Rugosidade')
+
+#zerar eixo em um ponto
+ax1[0].set_xlim(-0.1,)
+ax1[1].set_xlim(-0.1,)
+ax1[2].set_xlim(-0.1,)
+ax1[0].set_ylim(0,)
+ax1[1].set_ylim(0,)
+ax1[2].set_ylim(0,)
+
+
+plt.show()
